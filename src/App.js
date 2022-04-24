@@ -28,9 +28,16 @@ const App = () => {
   const [modalBody, setModalBody] = useState("");
   const [modalType, setModalType] = useState("error"); // could either be error or success
 
-  const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
+  const contractAddress =
+    process.env.REACT_APP_CONTRACT_ADDRESS ||
+    "0xf424B4d6581F2028BD0CAF38242032F4F0Eb645D";
   const contractABI = abi.abi;
 
+  /**
+   * @description: This function displays the error modal with heading and body when an error occurs in any operation
+   * @param {String} errorHeader - The error heading that will be displayed in the error modal
+   * @param {String} errorBody - The error body that wil be displayed in the error modal
+   */
   const displayError = (errorHeader, errorBody = "An error occured") => {
     setModalType("error");
     setShowModal(true);
@@ -38,6 +45,11 @@ const App = () => {
     setModalBody(errorBody);
   };
 
+  /**
+   * @description: This function displays the success modal with heading and body when an operation is successful
+   * @param {String} header - The heading that will be displayed in the success modal
+   * @param {String} body - The body that wil be displayed in the success modal
+   */
   const displaySuccess = (
     header = "Transaction Success",
     body = "Your transaction was successful"
@@ -48,6 +60,10 @@ const App = () => {
     setModalBody(body);
   };
 
+  /**
+   * @description - The function checks if the client has connected his wallet with Metamask
+   * @returns {Object} - either {success: true} or {success: false}
+   */
   const checkIfWalletIsConnected = async () => {
     try {
       if (window.ethereum) {
@@ -73,6 +89,10 @@ const App = () => {
     }
   };
 
+  /**
+   * @description - It calls the contract function that returns the balance in the shared wallet
+   * @returns {String} - returns the value of the shared wallet balance formatted with the ether unit
+   */
   const getSharedWalletBalance = async () => {
     try {
       const { sharedWalletContract } = await getSharedWalletContract(true);
@@ -90,6 +110,9 @@ const App = () => {
     }
   };
 
+  /**
+   * @description - It calls the contract function that adds beneficiary to the wallet
+   */
   const addBeneficiary = async () => {
     if (!inputValue.beneficiaryAddressToAdd) {
       displayError("Error", "Please enter beneficiary address");
@@ -125,6 +148,9 @@ const App = () => {
     }
   };
 
+  /**
+   * @description - It calls the contract function that removes beneficiary from the wallet
+   */
   const removeBeneficiary = async () => {
     if (!inputValue.beneficiaryAddressToRemove) {
       displayError("Error", "Please enter beneficiary address");
@@ -158,10 +184,19 @@ const App = () => {
     }
   };
 
+  /**
+   * @description - It formats the error message from the smart contract
+   * @param {String} errorMsg - Error message from the smart contract
+   * @returns {String} - Formatted error message
+   */
   const formatContractError = (errorMsg) => {
     return errorMsg.split(":")[1];
   };
 
+  /**
+   * @description - It calls the contract function that returns the address of the shared wallet owner
+   * @returns {String} - returns the address of the shared wallet owner
+   */
   const getSharedWalletOwnerHandler = async () => {
     try {
       const { sharedWalletContract } = await getSharedWalletContract(true);
@@ -175,6 +210,10 @@ const App = () => {
     }
   };
 
+  /**
+   * @description - It calls the contract function that returns the balance in the customer wallet
+   * @returns {String} - returns the value of the connected wallet formatted with the ether unit
+   */
   const customerBalanceHandler = async () => {
     try {
       const { provider } = await getSharedWalletContract(true);
@@ -218,6 +257,9 @@ const App = () => {
     }
   };
 
+  /**
+   * @description - It calls the contract function that deposits funds to the shared wallet
+   */
   const deposityMoneyHandler = async () => {
     if (!inputValue.deposit) {
       displayError("Error", "Please enter amount to deposit");
@@ -253,6 +295,9 @@ const App = () => {
     }
   };
 
+  /**
+   * @description - It calls the contract function that withdraws funds from the shared wallet
+   */
   const withDrawMoneyHandler = async () => {
     if (!inputValue.withdraw) {
       displayError("Error", "Please enter amount to withdraw");
@@ -290,6 +335,10 @@ const App = () => {
     }
   };
 
+  /**
+   * @description - It handles the input change
+   * @param {Object} event
+   */
   const handleInputChange = (event) => {
     setInputValue((prevFormData) => ({
       ...prevFormData,
@@ -297,6 +346,12 @@ const App = () => {
     }));
   };
 
+  /**
+   * @description - Handles logic based on the event emitted by the smart contract
+   * @param {Object} sharedWalletContract - The contract object
+   * @param {Function} callBackFn - the function that is executed when the smart contract emits an event
+   * @param {String} nameOfEvent - the event name
+   */
   const checkEvents = (
     sharedWalletContract,
     callBackFn,
