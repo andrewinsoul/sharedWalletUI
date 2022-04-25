@@ -279,8 +279,8 @@ const App = () => {
           getSharedWalletBalance(),
         ]);
         const [customerBalance, sharedWalletBalance] = balances;
-        setCustomerTotalBalance(`${customerBalance} ETH`);
-        setSharedWalletBalance(`${sharedWalletBalance} ETH`);
+        setCustomerTotalBalance(customerBalance);
+        setSharedWalletBalance(sharedWalletBalance);
         displaySuccess();
         setDepositing(false);
         console.log(`from: ${from} \nto: ${to}\n amount: ${amount.toString()}`);
