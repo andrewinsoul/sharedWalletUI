@@ -22,3 +22,7 @@ This React application implements the idea of a shared wallet, it is interacting
 - Only the wallet owner can add or remove beneficiaries
 
 - A beneficiary can withdraw from the wallet and he is entitled to withdrawing only once per day. That means when a beneficiary withdraws, he has to wait for 24 hours before he can withdraw again.
+
+## Deployment
+
+You can check out the deployed DApp [here](https://6265b5f024f612773d98a312--nimble-jelly-d1c323.netlify.app/) ✨✨
