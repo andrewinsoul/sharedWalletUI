@@ -1,9 +1,13 @@
 # Shared Wallet
 
 This React application implements the idea of a shared wallet, it is interacting with a smart contract which can be viewed in this
-[repository](https://github.com/andrewinsoul/SharedWallet/blob/master/contracts/SharedWallet.sol)
+[repository](https://github.com/andrewinsoul/SharedWallet/blob/master/contracts/SharedWallet.sol). The idea of the shared wallet is to cultivate the idea of saving in crypto which is very beneficial on the long run.
 
 ## How to Test Locally
+
+- Clone the respository of the smart contract that this app is interacting with using the command `git clone https://github.com/andrewinsoul/sharedWallet.git`
+
+- Follow the repo's ReadME and start the node
 
 - Clone the repository using the command `git clone https://github.com/andrewinsoul/sharedWalletUI.git`
 
@@ -17,11 +21,14 @@ This React application implements the idea of a shared wallet, it is interacting
 
 ## Features
 
-- Anybody can deposit to the wallet
+- Anybody can deposit to the wallet. Once you deposit into the wallet, you automatically become a beneficiary.
+  It should be noted that 0.03 ETH is subtracted from your first deposit into the wallet and this is the minimal you can deposit for your first time.
 
-- Only the wallet owner can add or remove beneficiaries
+- Only beneficiaries (people who have deposited) can withdraw from the wallet
 
-- A beneficiary can withdraw from the wallet and he is entitled to withdrawing only once per day. That means when a beneficiary withdraws, he has to wait for 24 hours before he can withdraw again.
+- A beneficiary can withdraw from the wallet when he has at least 0.5 ETH deposit in the shared wallet and his last time of withdrawal is more than a month. That means in a month, you can only withdraw once.
+
+- Only the owner of the shared wallet has access to the 0.03 ETH that is subtracted from every beneficiary the first time they deposit into the wallet.
 
 ## Deployment
 
