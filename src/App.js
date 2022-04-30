@@ -11,8 +11,7 @@ const App = () => {
   const [inputValue, setInputValue] = useState({
     withdraw: "",
     deposit: "",
-    beneficiaryAddressToAdd: "",
-    beneficiaryAddressToRemove: "",
+    withdrawProfit: "",
   });
   const [sharedWalletOwnerAddress, setSharedWalletOwnerAddress] =
     useState(null);
@@ -20,8 +19,9 @@ const App = () => {
   const [customerAddress, setCustomerAddress] = useState(null);
   const [sharedWalletBalance, setSharedWalletBalance] = useState(0);
   const [withdrawing, setWithdrawing] = useState(false);
-  const [addingBeneficiary, setAddingBeneficiary] = useState(false);
-  const [removingBeneficiary, setRemovingBeneficiary] = useState(false);
+  const [withdrawingProfit, setWithdrawingProfit] = useState(false);
+  const [appLoading, setAppLoading] = useState(false);
+  const [myProfit, setMyProfit] = useState(0);
   const [depositing, setDepositing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalHeader, setModalHeader] = useState("");
@@ -30,8 +30,8 @@ const App = () => {
 
   const contractAddress =
     process.env.REACT_APP_CONTRACT_ADDRESS ||
-    "0xf424B4d6581F2028BD0CAF38242032F4F0Eb645D";
-  const contractABI = abi.abi;
+    "0xaA4B750e53A54E7D85389F36A1d92b86e9954b46";
+  const { abi: contractABI } = abi;
 
   /**
    * @description: This function displays the error modal with heading and body when an error occurs in any operation
@@ -81,7 +81,7 @@ const App = () => {
       }
     } catch (error) {
       const errorBody =
-        (error.error && formatContractError(error.error.message)) ||
+        (error.error && error.error.message) ||
         error.message ||
         "An error occured";
       const errorHeader = "Transaction Error";
@@ -103,94 +103,11 @@ const App = () => {
       return sharedWalletBal;
     } catch (error) {
       const errorBody =
-        (error.error && formatContractError(error.error.message)) ||
+        (error.error && error.error.message) ||
         error.message ||
         "An error occured";
       displayError("Transaction Error", errorBody);
     }
-  };
-
-  /**
-   * @description - It calls the contract function that adds beneficiary to the wallet
-   */
-  const addBeneficiary = async () => {
-    if (!inputValue.beneficiaryAddressToAdd) {
-      displayError("Error", "Please enter beneficiary address");
-      return;
-    }
-    setAddingBeneficiary(true);
-    try {
-      const { sharedWalletContract } = await getSharedWalletContract();
-      const txn = await sharedWalletContract.addBeneficiary(
-        inputValue.beneficiaryAddressToAdd
-      );
-      console.log("Setting Beneficiaey Address...");
-      await txn.wait();
-      console.log("Beneficiary Address Changed", txn.hash);
-      checkEvents(
-        sharedWalletContract,
-        async (sharedWalletOwner, timestamp) => {
-          displaySuccess("Succes", "Beneficiary Successfully Added");
-          setAddingBeneficiary(false);
-          console.log(
-            `shared wallet owner: ${sharedWalletOwner}\n timestamp: ${timestamp}`
-          );
-        },
-        "AddBeneficiaryEvent"
-      );
-    } catch (error) {
-      setAddingBeneficiary(false);
-      const errorBody =
-        (error.error && formatContractError(error.error.message)) ||
-        error.message ||
-        "An error occured";
-      displayError("Transaction Error", errorBody);
-    }
-  };
-
-  /**
-   * @description - It calls the contract function that removes beneficiary from the wallet
-   */
-  const removeBeneficiary = async () => {
-    if (!inputValue.beneficiaryAddressToRemove) {
-      displayError("Error", "Please enter beneficiary address");
-      return;
-    }
-    setRemovingBeneficiary(true);
-    try {
-      const { sharedWalletContract } = await getSharedWalletContract();
-      const txn = await sharedWalletContract.removeBeneficiary(
-        inputValue.beneficiaryAddressToRemove
-      );
-      await txn.wait();
-      checkEvents(
-        sharedWalletContract,
-        async (sharedWalletOwner, timestamp) => {
-          displaySuccess("Success", "Beneficiary Successfully Removed");
-          setRemovingBeneficiary(false);
-          console.log(
-            `shared wallet owner: ${sharedWalletOwner}\n timestamp: ${timestamp}`
-          );
-        },
-        "RemoveBeneficiaryEvent"
-      );
-    } catch (error) {
-      setRemovingBeneficiary(false);
-      const errorBody =
-        (error.error && formatContractError(error.error.message)) ||
-        error.message ||
-        "An error occured";
-      displayError("Transaction Error", errorBody);
-    }
-  };
-
-  /**
-   * @description - It formats the error message from the smart contract
-   * @param {String} errorMsg - Error message from the smart contract
-   * @returns {String} - Formatted error message
-   */
-  const formatContractError = (errorMsg) => {
-    return errorMsg.split(":")[1];
   };
 
   /**
@@ -203,7 +120,28 @@ const App = () => {
       return sharedWalletContract.getSharedWalletOwnerAddress();
     } catch (error) {
       const errorBody =
-        (error.error && formatContractError(error.error.message)) ||
+        (error.error && error.error.message) ||
+        error.message ||
+        "An error occured";
+      displayError("Transaction Error", errorBody);
+    }
+  };
+
+  /**
+   * @description - It calls the contract function that returns the profit of the shared wallet owner
+   * @returns {Number} - returns the profit of the shared wallet owner
+   */
+  const getMyProfit = async () => {
+    try {
+      const { sharedWalletContract } = await getSharedWalletContract(true);
+      let ownerProfit = await sharedWalletContract.retrieveSharedWalletProfit();
+      ownerProfit = `${Number(ethers.utils.formatEther(ownerProfit)).toFixed(
+        4
+      )} ETH`;
+      return ownerProfit;
+    } catch (error) {
+      const errorBody =
+        (error.error && error.error.message) ||
         error.message ||
         "An error occured";
       displayError("Transaction Error", errorBody);
@@ -225,7 +163,7 @@ const App = () => {
       );
     } catch (error) {
       const errorBody =
-        (error.error && formatContractError(error.error.message)) ||
+        (error.error && error.error.message) ||
         error.message ||
         "An error occured";
       displayError("Transaction Error", errorBody);
@@ -261,8 +199,8 @@ const App = () => {
    * @description - It calls the contract function that deposits funds to the shared wallet
    */
   const deposityMoneyHandler = async () => {
-    if (!inputValue.deposit) {
-      displayError("Error", "Please enter amount to deposit");
+    const isValid = validateInput("deposit");
+    if (!isValid) {
       return;
     }
     setDepositing(true);
@@ -273,22 +211,32 @@ const App = () => {
       });
       console.log("Deposting money...");
       await txn.wait();
-      checkEvents(sharedWalletContract, async (from, to, amount) => {
-        const balances = await Promise.all([
-          customerBalanceHandler(),
-          getSharedWalletBalance(),
-        ]);
-        const [customerBalance, sharedWalletBalance] = balances;
-        setCustomerTotalBalance(customerBalance);
-        setSharedWalletBalance(sharedWalletBalance);
-        displaySuccess();
-        setDepositing(false);
-        console.log(`from: ${from} \nto: ${to}\n amount: ${amount.toString()}`);
-      });
+      checkEvents(
+        sharedWalletContract,
+        async (from, to, amount) => {
+          const balances = await Promise.all([
+            customerBalanceHandler(),
+            getSharedWalletBalance(),
+          ]);
+          const [customerBalance, sharedWalletBalance] = balances;
+          setCustomerTotalBalance(customerBalance);
+          setSharedWalletBalance(sharedWalletBalance);
+          displaySuccess();
+          setInputValue((prevFormData) => ({
+            ...prevFormData,
+            deposit: "",
+          }));
+          setDepositing(false);
+          console.log(
+            `from: ${from} \nto: ${to}\n amount: ${amount.toString()}`
+          );
+        },
+        "DepositTransferEvent"
+      );
     } catch (error) {
       setDepositing(false);
       const errorBody =
-        (error.error && formatContractError(error.error.message)) ||
+        (error.error && error.error.message) ||
         error.message ||
         "An error occured";
       displayError("Transaction Error", errorBody);
@@ -299,8 +247,8 @@ const App = () => {
    * @description - It calls the contract function that withdraws funds from the shared wallet
    */
   const withDrawMoneyHandler = async () => {
-    if (!inputValue.withdraw) {
-      displayError("Error", "Please enter amount to withdraw");
+    const isValid = validateInput("withdraw");
+    if (!isValid) {
       return;
     }
     setWithdrawing(true);
@@ -313,22 +261,98 @@ const App = () => {
       );
       console.log("Withdrawing money...");
       await txn.wait();
-      checkEvents(sharedWalletContract, async (from, to, amount) => {
-        const balances = await Promise.all([
-          customerBalanceHandler(),
-          getSharedWalletBalance(),
-        ]);
-        const [customerBalance, sharedWalletBalance] = balances;
-        setCustomerTotalBalance(customerBalance);
-        setSharedWalletBalance(sharedWalletBalance);
-        displaySuccess();
-        setWithdrawing(false);
-        console.log(`from: ${from} to: ${to} amount: ${amount.toString()}`);
-      });
+      checkEvents(
+        sharedWalletContract,
+        async (from, to, amount) => {
+          const balances = await Promise.all([
+            customerBalanceHandler(),
+            getSharedWalletBalance(),
+          ]);
+          const [customerBalance, sharedWalletBalance] = balances;
+          setCustomerTotalBalance(customerBalance);
+          setSharedWalletBalance(sharedWalletBalance);
+          displaySuccess();
+          setInputValue((prevFormData) => ({
+            ...prevFormData,
+            withdraw: "",
+          }));
+          setWithdrawing(false);
+          console.log(`from: ${from} to: ${to} amount: ${amount.toString()}`);
+        },
+        "WithdrawTransferEvent"
+      );
     } catch (error) {
       setWithdrawing(false);
       const errorBody =
-        (error.error && formatContractError(error.error.message)) ||
+        (error.error && error.error.message) ||
+        error.message ||
+        "An error occured";
+      displayError("Transaction Error", errorBody);
+    }
+  };
+
+  const validateInput = (name) => {
+    if (!inputValue[name]) {
+      displayError("Error", "Please enter amount");
+      setDepositing(false);
+      setWithdrawing(false);
+      setWithdrawingProfit(false);
+      return false;
+    }
+    if (isNaN(Number(inputValue[name]))) {
+      displayError("Error", `Please enter a valid amount`);
+      setDepositing(false);
+      setWithdrawing(false);
+      setWithdrawingProfit(false);
+      return false;
+    }
+    return true;
+  };
+
+  /**
+   * @description - It calls the contract function that withdraws funds from the shared wallet
+   */
+  const withDrawProfitHandler = async () => {
+    const isValid = validateInput("withdrawProfit");
+    if (!isValid) {
+      return;
+    }
+    setWithdrawingProfit(true);
+    try {
+      const { sharedWalletContract, signer } = await getSharedWalletContract();
+      const myAddress = await signer.getAddress();
+      console.log("provider signer...", myAddress);
+      const txn = await sharedWalletContract.withdrawMyProfit(
+        ethers.utils.parseEther(inputValue.withdrawProfit)
+      );
+      console.log("Withdrawing money...");
+      await txn.wait();
+      checkEvents(
+        sharedWalletContract,
+        async (from, to, amount) => {
+          const balances = await Promise.all([
+            customerBalanceHandler(),
+            getSharedWalletBalance(),
+            getMyProfit(),
+          ]);
+          const [customerBalance, sharedWalletBalance, myProfit] = balances;
+          setCustomerTotalBalance(customerBalance);
+          setSharedWalletBalance(sharedWalletBalance);
+          setMyProfit(myProfit);
+          setInputValue((prevFormData) => ({
+            ...prevFormData,
+            withdrawProfit: "",
+          }));
+          displaySuccess();
+          setWithdrawingProfit(false);
+          console.log(`from: ${from} to: ${to} amount: ${amount.toString()}`);
+        },
+        "WithdrawProfitTransferEvent"
+      );
+    } catch (error) {
+      setWithdrawingProfit(false);
+      const errorBody =
+        (error.error && error.error.message) ||
         error.message ||
         "An error occured";
       displayError("Transaction Error", errorBody);
@@ -352,17 +376,14 @@ const App = () => {
    * @param {Function} callBackFn - the function that is executed when the smart contract emits an event
    * @param {String} nameOfEvent - the event name
    */
-  const checkEvents = (
-    sharedWalletContract,
-    callBackFn,
-    nameOfEvent = "Transfer"
-  ) => {
+  const checkEvents = (sharedWalletContract, callBackFn, nameOfEvent) => {
     sharedWalletContract.on(nameOfEvent, callBackFn);
   };
 
   useEffect(() => {
     const fetch = async () => {
       try {
+        setAppLoading(true);
         const isWalletConnectedRes = await checkIfWalletIsConnected();
         const { success, errorBody, errorHeader } = isWalletConnectedRes;
         console.log(success, errorBody, errorHeader);
@@ -371,10 +392,12 @@ const App = () => {
             getSharedWalletBalance(),
             getSharedWalletOwnerHandler(),
             customerBalanceHandler(),
+            getMyProfit(),
           ]);
-          let [sharedWalletBalance, owner, balance] = res;
+          let [sharedWalletBalance, owner, balance, ownerProfit] = res;
           setSharedWalletBalance(sharedWalletBalance);
           setSharedWalletOwnerAddress(owner);
+          setMyProfit(ownerProfit);
 
           const [account] = await window.ethereum.request({
             method: "eth_requestAccounts",
@@ -392,6 +415,8 @@ const App = () => {
         }
       } catch (err) {
         displayError("Error", "An error occured while loading the app");
+      } finally {
+        setAppLoading(false);
       }
     };
     fetch();
@@ -402,130 +427,123 @@ const App = () => {
       <main
         className={
           showModal
-            ? "main-container pointer-events-none opacity-95"
+            ? "main-container pointer-events-none opacity-20"
             : "main-container "
         }
       >
-        <h2 className="headline">
-          <div>
-            <span className="headline-gradient">SharedWallet </span>
-            💰
+        {appLoading ? (
+          <div className="flex justify-center items-center">
+            <p className="my-12">Loading...</p>
           </div>
-          <span className="headline-gradient">
-            {`Shared Wallet Balance: ${sharedWalletBalance}`}
-          </span>
-        </h2>
-        <section className="customer-section px-10 pt-5 pb-10 flex flex-col sm:flex-row flex-wrap">
-          <div className="mt-7 mb-9 w-full sm:w-1/2 flex flex-col sm:flex-row">
-            <div className="form-style w-full mr-4">
-              <input
-                type="text"
-                className="input-style"
-                onChange={handleInputChange}
-                name="deposit"
-                placeholder="0.0000 ETH"
-                value={inputValue.deposit}
-              />
-              <button className="btn-purple" onClick={deposityMoneyHandler}>
-                Deposit Money To Wallet (In ETH)
-                <Loader classStyle="ml-4" loading={depositing} />
-              </button>
-            </div>
-          </div>
-          <div className="mt-7 mb-9 w-full sm:w-1/2 flex flex-col sm:flex-row">
-            <div className="form-style w-full">
-              <input
-                type="text"
-                className="input-style"
-                onChange={handleInputChange}
-                name="withdraw"
-                placeholder="0.0000 ETH"
-                value={inputValue.withdraw}
-              />
-              <button className="btn-purple" onClick={withDrawMoneyHandler}>
-                Withdraw Money from Wallet (In ETH)
-                <Loader classStyle="ml-4" loading={withdrawing} />
-              </button>
-            </div>
-          </div>
-          <div>
-            <div className="mt-5">
-              <p>
-                <span className="font-bold">Customer Balance: </span>
-                {customerTotalBalance}
-              </p>
-            </div>
-            <div className="mt-5">
-              <p>
-                <span className="font-bold">WalletOwner Address: </span>
-                {sharedWalletOwnerAddress}
-              </p>
-            </div>
-            <div className="mt-5">
-              {isWalletConnected && (
-                <p>
-                  <span className="font-bold">Your Wallet Address: </span>
-                  {customerAddress}
-                </p>
+        ) : (
+          <>
+            <h2 className="headline">
+              <div>
+                <span className="headline-gradient">SharedWallet </span>
+                💰
+              </div>
+              {issharedWalletOwner && (
+                <span className="headline-gradient">
+                  {`My Profit: ${myProfit}`}
+                </span>
               )}
-              <button
-                className="btn-connect"
-                onClick={checkIfWalletIsConnected}
-              >
-                {isWalletConnected
-                  ? "Wallet Connected 🔒"
-                  : "Connect Wallet 🔑"}
-              </button>
-            </div>
-          </div>
-        </section>
-        {issharedWalletOwner && (
-          <section className="bank-owner-section">
-            <h2 className="text-xl border-b-2 border-indigo-500 px-10 py-4 font-bold">
-              Shared Wallet Owner Admin Panel
+              <span className="headline-gradient">
+                {`Shared Wallet Balance: ${sharedWalletBalance}`}
+              </span>
             </h2>
-            <div className="p-2 sm:p-10 flex flex-col sm:flex-row">
-              <div className="form-style w-full sm:w-1/2">
-                <div className="w-full">
+            <section className="customer-section px-10 pt-5 pb-10 flex flex-col sm:flex-row flex-wrap">
+              <div className="mt-7 mb-9 w-full sm:w-1/2 flex flex-col sm:flex-row">
+                <div className="form-style w-full mr-4">
                   <input
                     type="text"
-                    className="input-style w-full text-sm"
+                    className="input-style"
                     onChange={handleInputChange}
-                    name="beneficiaryAddressToAdd"
-                    placeholder="Enter Wallet Address of Beneficiary"
-                    value={inputValue.beneficiaryAddressToAdd}
+                    name="deposit"
+                    placeholder="0.0000 ETH"
+                    value={inputValue.deposit}
                   />
-                  <button
-                    className="btn-grey w-full mt-4"
-                    onClick={addBeneficiary}
-                  >
-                    Add Beneficiary
-                    <Loader loading={addingBeneficiary} classStyle="ml-4" />
+                  <button className="btn-purple" onClick={deposityMoneyHandler}>
+                    Deposit Money To Wallet (In ETH)
+                    <Loader classStyle="ml-4" loading={depositing} />
                   </button>
                 </div>
               </div>
-
-              <div className="form-style w-full sm:w-1/2 mt-10 sm:mt-0">
-                <div className="w-full">
+              <div className="mt-7 mb-9 w-full sm:w-1/2 flex flex-col sm:flex-row">
+                <div className="form-style w-full">
                   <input
                     type="text"
-                    className="input-style w-full text-sm"
+                    className="input-style"
                     onChange={handleInputChange}
-                    name="beneficiaryAddressToRemove"
-                    placeholder="Enter Wallet Address of Beneficiary"
-                    value={inputValue.beneficiaryAddressToRemove}
+                    name="withdraw"
+                    placeholder="0.0000 ETH"
+                    value={inputValue.withdraw}
                   />
-                  <button
-                    className="btn-grey w-full mt-4"
-                    onClick={removeBeneficiary}
-                  >
-                    Remove Beneficiary
-                    <Loader loading={removingBeneficiary} classStyle="ml-4" />
+                  <button className="btn-purple" onClick={withDrawMoneyHandler}>
+                    Withdraw Money from Wallet (In ETH)
+                    <Loader classStyle="ml-4" loading={withdrawing} />
                   </button>
                 </div>
               </div>
-            </div>
-          </section>
+              <div>
+                <div className="mt-5">
+                  <p>
+                    <span className="font-bold">Customer Balance: </span>
+                    {customerTotalBalance}
+                  </p>
+                </div>
+                <div className="mt-5">
+                  <p>
+                    <span className="font-bold">WalletOwner Address: </span>
+                    {sharedWalletOwnerAddress}
+                  </p>
+                </div>
+                <div className="mt-5">
+                  {isWalletConnected && (
+                    <p>
+                      <span className="font-bold">Your Wallet Address: </span>
+                      {customerAddress}
+                    </p>
+                  )}
+                  <button
+                    className="btn-connect"
+                    onClick={checkIfWalletIsConnected}
+                  >
+                    {isWalletConnected
+                      ? "Wallet Connected 🔒"
+                      : "Connect Wallet 🔑"}
+                  </button>
+                </div>
+              </div>
+            </section>
+            {issharedWalletOwner && (
+              <section className="bank-owner-section">
+                <h2 className="text-xl border-b-2 border-indigo-500 px-10 py-4 font-bold">
+                  Shared Wallet Owner Admin Panel
+                </h2>
+                <div className="p-2 sm:p-10 flex flex-col sm:flex-row">
+                  <div className="form-style w-full">
+                    <div className="w-full">
+                      <input
+                        type="text"
+                        className="input-style w-full text-sm"
+                        onChange={handleInputChange}
+                        name="withdrawProfit"
+                        placeholder="Enter Amount"
+                        value={inputValue.withdrawProfit}
+                      />
+                      <button
+                        className="btn-grey w-full"
+                        onClick={withDrawProfitHandler}
+                      >
+                        Withdraw Profit
+                        <Loader loading={withdrawingProfit} classStyle="ml-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+          </>
         )}
       </main>
       <Modal

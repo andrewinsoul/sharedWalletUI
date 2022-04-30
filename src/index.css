@@ -23,11 +23,11 @@
   }
 
   .btn-purple {
-    @apply font-bold px-4 py-3 tracking-wider text-gray-100 uppercase flex flex-row justify-center transition-colors duration-200 transform bg-indigo-800  hover:bg-indigo-700 z-30 text-sm sm:text-lg;
+    @apply font-bold px-4 py-3 tracking-wider text-gray-100 uppercase flex flex-row justify-center transition-colors duration-200 transform bg-indigo-800 rounded-br-lg rounded-bl-lg  hover:bg-indigo-700 z-30 text-sm sm:text-lg;
   }
 
   .btn-grey {
-    @apply px-4 py-3 font-medium tracking-wider text-gray-100 uppercase flex flex-row justify-center transition-colors duration-200 transform bg-gray-700 hover:bg-gray-600 focus:bg-gray-600 focus:outline-none text-sm sm:text-lg;
+    @apply px-4 py-2 font-medium tracking-wider text-gray-100 uppercase flex flex-row justify-center transition-colors duration-200 transform bg-gray-700 rounded-br-lg rounded-bl-lg hover:bg-gray-600 focus:bg-gray-600 focus:outline-none text-sm sm:text-lg;
   }
 
   .btn-connect {
