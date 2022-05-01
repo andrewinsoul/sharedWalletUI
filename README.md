@@ -32,4 +32,4 @@ This React application implements the idea of a shared wallet, it is interacting
 
 ## Deployment
 
-You can check out the deployed DApp [here](https://6265b5f024f612773d98a312--nimble-jelly-d1c323.netlify.app/) ✨✨
+You can check out the deployed DApp [here](https://nimble-jelly-d1c323.netlify.app/) ✨✨
